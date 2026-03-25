@@ -13,6 +13,12 @@ pip install -U pip
 pip install .
 ```
 
+Install from GitHub:
+
+```powershell
+pip install --upgrade --force-reinstall "git+https://github.com/vineetllm/fastapi-railway.git@main"
+```
+
 ## Required runtime inputs
 
 - KP mapping excel is bundled in the package by default (`planetary_kp_api/data/kp_mapping_all.xlsx`)
@@ -61,6 +67,43 @@ Health check URL:
 - `/health`
 
 ## Use directly in Python code
+
+Recommended (remote call, no `pyswisseph` needed):
+
+```python
+from datetime import date, time
+from planetary_kp_api import generate_kp_mapping_remote
+
+result = generate_kp_mapping_remote(
+    base_url="https://web-production-278cd.up.railway.app",
+    date_value=date(2026, 3, 25),
+    time_value=time(9, 15),
+    latitude=19.076,
+    longitude=72.8777,
+    timezone_offset=5.5,
+    ayanamsa="Lahiri",
+)
+```
+
+Local generation (optional):
+
+```powershell
+pip install "planetary-kp-api[local]"
+```
+
+```python
+from datetime import date, time
+from planetary_kp_api import generate_kp_mapping
+
+result = generate_kp_mapping(
+    date_value=date(2026, 3, 25),
+    time_value=time(9, 15),
+    latitude=19.076,
+    longitude=72.8777,
+    timezone_offset=5.5,
+    ayanamsa="Lahiri",
+)
+```
 
 ```python
 from datetime import date, time

@@ -16,8 +16,11 @@ dependencies = [
   "uvicorn[standard]>=0.30.0",
   "pandas>=2.2.0",
   "openpyxl>=3.1.0",
-  "pyswisseph>=2.10.3.2",
+  "requests>=2.31.0",
 ]
+
+[project.optional-dependencies]
+local = ["pyswisseph>=2.10.3.2"]
 
 [project.scripts]
 planetary-kp-api = "planetary_kp_api.cli:main"
