@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "planetary-kp-api"
+version = "0.1.0"
+description = "Installable FastAPI + Python module for planetary KP mapping data"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Numeroniq" }
+]
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+  "pandas>=2.2.0",
+  "openpyxl>=3.1.0",
+  "pyswisseph>=2.10.3.2",
+]
+
+[project.scripts]
+planetary-kp-api = "planetary_kp_api.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["planetary_kp_api*"]
+exclude = ["app*", "tests*"]
