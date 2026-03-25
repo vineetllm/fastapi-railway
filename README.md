@@ -16,13 +16,15 @@ pip install .
 ## Required runtime inputs
 
 - KP mapping excel is bundled in the package by default (`planetary_kp_api/data/kp_mapping_all.xlsx`)
-- Swiss ephemeris data path: `C:/ephe` (or set `EPHE_PATH`)
+- Swiss ephemeris files are optional.
+  Without ephemeris files, the package automatically falls back to Moshier mode (no separate install).
+- Optional high-precision mode: set `EPHE_PATH` to a folder containing `.se1/.se2` files.
 - Optional override: set `KP_MAPPING_FILE` to use your own mapping file
 
 Example:
 
 ```powershell
-$env:EPHE_PATH = "C:\ephe"
+$env:EPHE_PATH = "C:\ephe"  # optional
 ```
 
 ## Run as API server (after install)
@@ -51,10 +53,8 @@ Railway injects `PORT`, and the app reads it automatically.
 2. In Railway: `New Project` -> `Deploy from GitHub Repo`.
 3. Select this repo/service.
 4. Set variables in Railway service:
-   - `EPHE_PATH=./ephe` (recommended for Railway/Linux)
-5. Ensure files are present in repo:
-   - `kp_mapping_all.xlsx`
-   - `ephe/` directory with Swiss ephemeris files
+   - `EPHE_PATH=./ephe` (optional, only if you provide ephemeris files)
+5. Optional: if using high-precision Swiss files, include `ephe/` directory in repo
 6. Deploy.
 
 Health check URL:
@@ -73,7 +73,7 @@ result = generate_kp_mapping(
     longitude=72.8777,
     timezone_offset=5.5,
     ayanamsa="Lahiri",
-    ephe_path=r"C:\ephe",
+    ephe_path=r"C:\ephe",  # optional
 )
 
 print(result["meta"])

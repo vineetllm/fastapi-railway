@@ -412,9 +412,23 @@ class KpMappingService:
     def __init__(self, kp_mapping_path: str | None, ephe_path: str):
         self.kp_mapping_path = kp_mapping_path
         self.ephe_path = ephe_path
-
-        swe.set_ephe_path(self.ephe_path)
+        self.use_swiss_ephemeris = self._configure_ephemeris(self.ephe_path)
+        self.ephe_calc_flag = swe.FLG_SWIEPH if self.use_swiss_ephemeris else swe.FLG_MOSEPH
+        self.sidereal_flag = swe.FLG_SIDEREAL | self.ephe_calc_flag
         self.kp_df, self.kp_cols = self._load_kp_mapping(self.kp_mapping_path)
+
+    @staticmethod
+    def _configure_ephemeris(ephe_path: str | None) -> bool:
+        if not ephe_path or not os.path.isdir(ephe_path):
+            return False
+        try:
+            has_ephe_files = any(name.lower().endswith((".se1", ".se2")) for name in os.listdir(ephe_path))
+            if has_ephe_files:
+                swe.set_ephe_path(ephe_path)
+                return True
+        except Exception:
+            return False
+        return False
 
     @staticmethod
     def _load_kp_mapping(path: str | None) -> tuple[pd.DataFrame, dict[str, str]]:
@@ -474,10 +488,9 @@ class KpMappingService:
             return kp_sub.iloc[-1]
         return row.iloc[0]
 
-    @staticmethod
-    def _compute_planet_metrics(name: str, jd: float, asc_deg: float) -> dict[str, Any] | None:
-        sid_flag = swe.FLG_SIDEREAL | swe.FLG_SWIEPH
-
+    def _compute_planet_metrics(self, name: str, jd: float, asc_deg: float) -> dict[str, Any] | None:
+        sid_flag = self.sidereal_flag
+        ephe_flag = self.ephe_calc_flag
         if name == "Asc":
             deg = asc_deg
             speed_deg = speed_arcmin = dist = decl = 0.0
@@ -493,23 +506,23 @@ class KpMappingService:
                 deg = swe.calc_ut(jd, PLANET_IDS[name], sid_flag)[0][0] % 360
 
             if name == "Ketu":
-                calc = swe.calc_ut(jd, swe.TRUE_NODE)[0]
+                calc = swe.calc_ut(jd, swe.TRUE_NODE, ephe_flag)[0]
                 speed_deg = -calc[3]
                 speed_arcmin = speed_deg * 60
                 dist = calc[2]
-                decl = -swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_EQUATORIAL)[0][1]
+                decl = -swe.calc_ut(jd, swe.TRUE_NODE, ephe_flag | swe.FLG_EQUATORIAL)[0][1]
             elif name == "Rahu":
-                calc = swe.calc_ut(jd, swe.TRUE_NODE)[0]
+                calc = swe.calc_ut(jd, swe.TRUE_NODE, ephe_flag)[0]
                 speed_deg = calc[3]
                 speed_arcmin = speed_deg * 60
                 dist = calc[2]
-                decl = swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_EQUATORIAL)[0][1]
+                decl = swe.calc_ut(jd, swe.TRUE_NODE, ephe_flag | swe.FLG_EQUATORIAL)[0][1]
             else:
-                calc = swe.calc_ut(jd, PLANET_IDS[name])[0]
+                calc = swe.calc_ut(jd, PLANET_IDS[name], ephe_flag)[0]
                 speed_deg = calc[3]
                 speed_arcmin = speed_deg * 60
                 dist = calc[2]
-                decl = swe.calc_ut(jd, PLANET_IDS[name], swe.FLG_SWIEPH | swe.FLG_EQUATORIAL)[0][1]
+                decl = swe.calc_ut(jd, PLANET_IDS[name], ephe_flag | swe.FLG_EQUATORIAL)[0][1]
 
             lat_val = 0.0 if name in ["Rahu", "Ketu"] else swe.calc_ut(jd, PLANET_IDS[name], sid_flag)[0][1]
 
@@ -517,8 +530,8 @@ class KpMappingService:
                 position = "R" if speed_deg < 0 else "D"
             else:
                 is_retro = speed_deg < 0
-                planet_trop = swe.calc_ut(jd, PLANET_IDS[name])[0][0] % 360
-                sun_trop = swe.calc_ut(jd, swe.SUN)[0][0] % 360
+                planet_trop = swe.calc_ut(jd, PLANET_IDS[name], ephe_flag)[0][0] % 360
+                sun_trop = swe.calc_ut(jd, swe.SUN, ephe_flag)[0][0] % 360
                 sep = abs((planet_trop - sun_trop) % 360)
                 if sep > 180:
                     sep = 360 - sep
@@ -561,7 +574,8 @@ class KpMappingService:
         if ayanamsa not in sid_map:
             raise ValueError(f"Unsupported ayanamsa: {ayanamsa}")
 
-        swe.set_ephe_path(self.ephe_path)
+        if self.use_swiss_ephemeris:
+            swe.set_ephe_path(self.ephe_path)
         swe.set_sid_mode(sid_map[ayanamsa])
 
         local_dt = datetime.combine(local_date, local_time)
