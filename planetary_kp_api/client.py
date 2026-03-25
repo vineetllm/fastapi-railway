@@ -30,7 +30,7 @@ def generate_kp_mapping(
 ) -> dict:
     """Generate the planetary KP mapping table directly in Python (no HTTP call)."""
     service = KpMappingService(
-        kp_mapping_path=kp_mapping_file or os.getenv("KP_MAPPING_FILE", "kp_mapping_all.xlsx"),
+        kp_mapping_path=kp_mapping_file or os.getenv("KP_MAPPING_FILE"),
         ephe_path=ephe_path or _default_ephe_path(),
     )
     meta, data = service.generate(

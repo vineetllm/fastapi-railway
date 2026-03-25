@@ -1,8 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import re
 from datetime import date, datetime, time, timezone
+from importlib import resources
 from typing import Any
 
 import pandas as pd
@@ -211,7 +212,7 @@ def _deg_to_dms_str(deg: float) -> str:
     if m == 60:
         m = 0
         d += 1
-    return f"{d:02d}°{m:02d}'{s:02d}\""
+    return f"{d:02d}\u00B0{m:02d}'{s:02d}\""
 
 
 def _dms_to_seconds(dms_str: str) -> int:
@@ -242,7 +243,7 @@ def _lat_to_dms(val: float) -> str:
     if m == 60:
         m = 0
         d += 1
-    return f"{sign}{d:02d}°{m:02d}'{s:02d}\""
+    return f"{sign}{d:02d}\u00B0{m:02d}'{s:02d}\""
 
 
 def _build_nak_pada_ranges() -> list[dict[str, Any]]:
@@ -408,7 +409,7 @@ def _is_pushkara_navamsa(row: pd.Series) -> str:
 
 
 class KpMappingService:
-    def __init__(self, kp_mapping_path: str, ephe_path: str):
+    def __init__(self, kp_mapping_path: str | None, ephe_path: str):
         self.kp_mapping_path = kp_mapping_path
         self.ephe_path = ephe_path
 
@@ -416,14 +417,27 @@ class KpMappingService:
         self.kp_df, self.kp_cols = self._load_kp_mapping(self.kp_mapping_path)
 
     @staticmethod
-    def _load_kp_mapping(path: str) -> tuple[pd.DataFrame, dict[str, str]]:
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                f"KP mapping file not found: {path}. Place kp_mapping_all.xlsx in the project root "
-                "or set KP_MAPPING_FILE env var."
-            )
+    def _load_kp_mapping(path: str | None) -> tuple[pd.DataFrame, dict[str, str]]:
+        if path:
+            if not os.path.exists(path):
+                raise FileNotFoundError(
+                    f"KP mapping file not found: {path}. Provide a valid path or unset KP_MAPPING_FILE "
+                    "to use bundled default data."
+                )
+            df = pd.read_excel(path)
+        else:
+            packaged = resources.files("planetary_kp_api.data").joinpath("kp_mapping_all.xlsx")
+            if packaged.is_file():
+                with packaged.open("rb") as f:
+                    df = pd.read_excel(f)
+            elif os.path.exists("kp_mapping_all.xlsx"):
+                df = pd.read_excel("kp_mapping_all.xlsx")
+            else:
+                raise FileNotFoundError(
+                    "KP mapping file not found. Set KP_MAPPING_FILE or install package data "
+                    "'planetary_kp_api/data/kp_mapping_all.xlsx'."
+                )
 
-        df = pd.read_excel(path)
         df.columns = [str(col).strip() for col in df.columns]
 
         def pick_col(predicate: Any, label: str) -> str:
@@ -705,4 +719,5 @@ class KpMappingService:
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         }
         return meta, records
+
 

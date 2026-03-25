@@ -15,13 +15,13 @@ pip install .
 
 ## Required runtime inputs
 
-- KP mapping excel file: `kp_mapping_all.xlsx` (or set `KP_MAPPING_FILE`)
+- KP mapping excel is bundled in the package by default (`planetary_kp_api/data/kp_mapping_all.xlsx`)
 - Swiss ephemeris data path: `C:/ephe` (or set `EPHE_PATH`)
+- Optional override: set `KP_MAPPING_FILE` to use your own mapping file
 
 Example:
 
 ```powershell
-$env:KP_MAPPING_FILE = "C:\path\to\kp_mapping_all.xlsx"
 $env:EPHE_PATH = "C:\ephe"
 ```
 
@@ -43,6 +43,7 @@ web: python -m planetary_kp_api --host 0.0.0.0
 ```
 
 Railway injects `PORT`, and the app reads it automatically.
+`nixpacks.toml` is included to install SQLite runtime (`libsqlite3-0`) required by `pyswisseph`.
 
 ### Steps
 
@@ -50,7 +51,6 @@ Railway injects `PORT`, and the app reads it automatically.
 2. In Railway: `New Project` -> `Deploy from GitHub Repo`.
 3. Select this repo/service.
 4. Set variables in Railway service:
-   - `KP_MAPPING_FILE=kp_mapping_all.xlsx` (or absolute path inside container)
    - `EPHE_PATH=./ephe` (recommended for Railway/Linux)
 5. Ensure files are present in repo:
    - `kp_mapping_all.xlsx`
@@ -73,7 +73,6 @@ result = generate_kp_mapping(
     longitude=72.8777,
     timezone_offset=5.5,
     ayanamsa="Lahiri",
-    kp_mapping_file=r"C:\path\to\kp_mapping_all.xlsx",
     ephe_path=r"C:\ephe",
 )
 

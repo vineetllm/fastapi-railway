@@ -22,6 +22,12 @@ dependencies = [
 [project.scripts]
 planetary-kp-api = "planetary_kp_api.cli:main"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 include = ["planetary_kp_api*"]
 exclude = ["app*", "tests*"]
+
+[tool.setuptools.package-data]
+planetary_kp_api = ["data/*.xlsx"]

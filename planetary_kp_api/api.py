@@ -23,7 +23,7 @@ def create_app() -> FastAPI:
 
     @lru_cache(maxsize=1)
     def get_service() -> KpMappingService:
-        kp_mapping_file = os.getenv("KP_MAPPING_FILE", "kp_mapping_all.xlsx")
+        kp_mapping_file = os.getenv("KP_MAPPING_FILE")
         ephe_path = _default_ephe_path()
         return KpMappingService(
             kp_mapping_path=kp_mapping_file,
